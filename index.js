@@ -3,12 +3,22 @@ const app = express()
 const morgan = require('morgan')
 
 app.use(express.json())
-morgan.token("withPost",(request,response)=>{
-    if(request.method == "POST"){
-        return JSON.stringify(request.body)      
-    }    
+morgan.token('withPOST',(req,res)=>{
+    if(req.method=="POST"){
+       return JSON.stringify(req.body)
+    }
 })
-app.use(morgan(":method :url :status :res[content-length] - :response-time ms :withPost"))
+
+app.use(morgan((tokens,req,res)=>{    
+    return [
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens.res(req, res, 'content-length'), '-',
+        tokens['response-time'](req, res), 'ms',
+        tokens['withPOST'](req,res)
+      ].join(' ')    
+}))
 
 let persons = [{
             "name": "Arto Hellas",
