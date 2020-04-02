@@ -2,6 +2,8 @@ const express = require('express')
 const app = express()
 const morgan = require('morgan')
 const cors = require('cors')
+require('dotenv').config()
+const Person = require('./models/person')
 
 app.use(cors())
 app.use(express.static('build'))
@@ -24,50 +26,37 @@ app.use(morgan((tokens,req,res)=>{
       ].join(' ')    
 }))
 
-let persons = [{
-            "name": "Arto Hellas",
-            "number": "040-123456",
-            "id": 1
-        },
-        {
-            "name": "Ada Lovelace",
-            "number": "39-44-5323523",
-            "id": 2
-        },
-        {
-            "name": "Dan Abramov",
-            "number": "12-43-234345",
-            "id": 3
-        },
-        {
-            "name": "Mary Poppendieck",
-            "number": "39-23-6423122",
-            "id": 4
-        }
-    ]
-
-
 app.get('/api/persons', (request, response) => {
-    response.json(persons)    
+    Person.find({}).then(persons => {
+        response.json(persons.map(person => person.toJSON()))
+    })
 })
 
 app.get('/api/persons/:id',(request,response)=>{
-    const id = Number(request.params.id)
-    const person = persons.find((person)=>person.id===id)
-    if(person){
-        response.send(person)
+    const id = (request.params.id)
+    const hex  = new RegExp(/^[0-9A-F]{24}$/, 'i')
+    
+    if(hex.test(id)){
+        Person.find({ _id: id }).then(person =>        
+        {     
+            if(person.length !== 0){
+                response.json(person[0].toJSON())
+            }else{
+                response.status(404).send({error: `person with id ${id} not found`})
+            }
+        }).catch(e=>console.log("error: ", e))
     }else{
-        response.status(404).end()
+        response.status(400).send({error: "id specified is not a 24 digit hex number"})
     }
 })
 app.delete('/api/persons/:id',(request,response)=> {
-    const id = Number(request.params.id)
-    const person = persons.filter(person=>person.id!==id)
-    persons= person
-    response.status(204).end()
+    const id = request.params.id
+    Person.findByIdAndDelete(id).then(res => {        
+        response.status(204).end()
+    })    
 })
+
 app.post('/api/persons/',(request,response)=>{
-    const id = Math.floor(Math.random()*1000)
     const body = request.body
     if(!body.name){
         return response.status(409).json({error:"name is missing"})
@@ -75,25 +64,23 @@ app.post('/api/persons/',(request,response)=>{
     if(!body.number){
         return response.status(409).json({error:"number is missing"})
     }
-    if(persons.find(person=>person.name===body.name)){
-        return response.status(409).json({error:"name must be unique"})
-    }
-
-    person = {
+    const person = new Person({
         "name":body.name,
-        "number":body.number,
-        "id": id
-    }
-    persons = persons.concat(person)
-    response.json(person)
+        "number":body.number
+    })
+    person.save().then(person=>{
+        response.json(person.toJSON())
+    }).catch(e=>console.log(e))
 })
 
-app.get('/info', (request,response) => {    
-    response.send(`<p>Phonebook has info for ${persons["persons"].length} persons</p>${new Date()}`)
+app.get('/info', (request,response) => {
+    Person.find({}).then(person=>{
+        response.send(`<p>Phonebook has info for ${person.length} persons</p>${new Date()}`)
+    })    
 })
 
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 })
