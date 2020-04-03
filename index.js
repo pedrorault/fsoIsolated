@@ -11,8 +11,9 @@ app.use(cors())
 app.use(express.static('build'))
 app.use(express.json())
 
+// eslint-disable-next-line
 morgan.token('withPOST', (req, res) => {
-    if (req.method == "POST") {
+    if (req.method === 'POST') {
         return JSON.stringify(req.body)
     }
 })
@@ -32,7 +33,7 @@ app.get('/api/persons', (request, response, next) => {
     Person.find({}).then(persons => {
         response.json(persons.map(person => person.toJSON()))
     })
-    .catch(error=>next(error))
+        .catch(error => next(error))
 })
 
 app.get('/api/persons/:id', (request, response, next) => {
@@ -49,20 +50,20 @@ app.delete('/api/persons/:id', (request, response, next) => {
     Person.findByIdAndDelete(id).then(res => {
         if (res) {
             response.status(204).end()
-        } else {            
+        } else {
             const error = new Error()
-            error.name = "ID not found"
+            error.name = 'ID not found'
             error.status = 404
             return next(error)
         }
-    }).catch(error=>next(error))
+    }).catch(error => next(error))
 })
 
 app.post('/api/persons/', (request, response, next) => {
-    const body = request.body    
+    const body = request.body
     const person = new Person({
-        "name": body.name,
-        "number": body.number
+        'name': body.name,
+        'number': body.number
     })
     person.save().then(person => {
         response.json(person.toJSON())
@@ -73,27 +74,27 @@ app.get('/info', (request, response, next) => {
     Person.find({}).then(person => {
         response.send(`<p>Phonebook has info for ${person.length} persons</p>${new Date()}`)
     })
-    .catch(error=>next(error))
+        .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
     const body = request.body
     const person = {
-        "name": body.name,
-        "number": body.number
+        'name': body.name,
+        'number': body.number
     }
     Person.findByIdAndUpdate(request.params.id, person, {
-            runValidators: true,
-            context: 'query',
-            new: true
-        })
+        runValidators: true,
+        context: 'query',
+        new: true
+    })
         .then(updated => {
             response.json(updated.toJSON())
         })
         .catch(error => next(error))
 })
 
-app.get("*",(request,response,next)=> {
+app.get('*',(request,response,next) => {
     const error = new Error()
     error.status = 404
     next(error)
@@ -103,5 +104,5 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`)
 })
