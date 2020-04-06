@@ -40,7 +40,7 @@ app.get('/api/persons/:id', (request, response, next) => {
     const id = (request.params.id)
     Person.find({ _id: id })
         .then(person => {
-            response.json(person[0].toJSON())
+            response.json(person[0].toJSON)
         })
         .catch(error => next(error))
 })
